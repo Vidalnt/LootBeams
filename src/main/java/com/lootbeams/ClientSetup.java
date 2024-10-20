@@ -4,12 +4,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.*;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderNameplateEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderNameTagEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 public class ClientSetup {
 
 	public static void init(FMLClientSetupEvent e) {
-		MinecraftForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
+		NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
 	}
 
-	public static void onRenderNameplate(RenderNameplateEvent event) {
+	public static void onRenderNameplate(RenderNameTagEvent event) {
 		if (event.getEntity() instanceof ItemEntity) {
 			ItemEntity itemEntity = (ItemEntity) event.getEntity();
 			if (Minecraft.getInstance().player.distanceToSqr(itemEntity) > Configuration.RENDER_DISTANCE.get() * Configuration.RENDER_DISTANCE.get()) {
@@ -57,7 +57,7 @@ public class ClientSetup {
 			}
 
 			if (shouldRender) {
-				LootBeamRenderer.renderLootBeam(event.getPoseStack(), event.getMultiBufferSource(), event.getPartialTick(), itemEntity.level.getGameTime(), itemEntity);
+				LootBeamRenderer.renderLootBeam(event.getPoseStack(), event.getMultiBufferSource(), event.getPartialTick(), itemEntity.getLevel().getGameTime(), itemEntity);
 			}
 		}
 	}
@@ -69,14 +69,16 @@ public class ClientSetup {
 		if (registryNames.size() > 0) {
 			for (String id : registryNames.stream().filter((s) -> (!s.isEmpty())).collect(Collectors.toList())) {
 				if (!id.contains(":")) {
-					if (item.getRegistryName().getNamespace().equals(id)) {
+					if (BuiltInRegistries.ITEM.getKey(item).getNamespace().equals(id)) {
 						return true;
 					}
 				}
 				ResourceLocation itemResource = ResourceLocation.tryParse(id);
-				if (itemResource != null && ForgeRegistries.ITEMS.getValue(itemResource).asItem() == item.asItem()) {
+				if (itemResource != null && BuiltInRegistries.ITEM.get(itemResource).asItem() == item.asItem()) {
 					return true;
 				}
+
+				
 			}
 		}
 		return false;

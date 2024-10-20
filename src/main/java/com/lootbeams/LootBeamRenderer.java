@@ -1,44 +1,53 @@
 package com.lootbeams;
 
 import com.google.common.collect.Lists;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Matrix3f;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Vector3f;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+//import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TranslatableComponent;
+//import net.minecraft.network.chat.TranslatableComponent;
+//import net.minecraft.network.chat.Color;
+//import net.minecraft.network.chat.TextVisitFactory;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringDecomposer;
 import net.minecraft.util.StringUtil;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fml.ModList;
-
+//import net.minecraft.util.math.RotationAxis;
+import org.joml.Matrix4f;
+import org.joml.Matrix3f;
+import com.mojang.math.Vector3f;
+import net.neoforged.neoforge.client.NeoForgeRenderTypes;
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
-
+import net.minecraft.core.Direction;
+import org.joml.Quaternionf;
 public class LootBeamRenderer extends RenderType {
 
 	/**
 	 * ISSUES:
 	 * Beam renders behind things like chests/clouds/water/beds/entities.
 	 */
-
+    //Quaternionf.rotation
 	private static final ResourceLocation LOOT_BEAM_TEXTURE = new ResourceLocation(LootBeams.MODID, "textures/entity/loot_beam.png");
 	private static final RenderType LOOT_BEAM_RENDERTYPE = createRenderType();
 
@@ -48,20 +57,24 @@ public class LootBeamRenderer extends RenderType {
 
 	public static void renderLootBeam(PoseStack stack, MultiBufferSource buffer, float pticks, long worldtime, ItemEntity item) {
 		float beamAlpha = Configuration.BEAM_ALPHA.get().floatValue();
+		float fadeDistance = Configuration.FADE_DISTANCE.get().floatValue();
 		//Fade out when close
-		if (Minecraft.getInstance().player.distanceToSqr(item) < 2f) {
-			beamAlpha *= Minecraft.getInstance().player.distanceToSqr(item);
+		var player = Minecraft.getInstance().player;
+		var distance = player.distanceToSqr(item);
+		if (distance < fadeDistance) {
+			beamAlpha *= Math.max(0, distance-fadeDistance+1);
 		}
 		//Dont render beam if its too transparent
-		if (beamAlpha <= 0.15f) {
+		if (beamAlpha <= 0.1f) {
 			return;
 		}
+
+		float glowAlpha = beamAlpha * 0.4f;
 
 		float beamRadius = 0.05f * Configuration.BEAM_RADIUS.get().floatValue();
 		float glowRadius = beamRadius + (beamRadius * 0.2f);
 		float beamHeight = Configuration.BEAM_HEIGHT.get().floatValue();
 		float yOffset = Configuration.BEAM_Y_OFFSET.get().floatValue();
-
 
 		Color color = getItemColor(item);
 		float R = color.getRed() / 255f;
@@ -132,36 +145,87 @@ public class LootBeamRenderer extends RenderType {
 			stack.translate(0, 0, -10);
 			RenderText(fontrenderer, stack, buffer, itemName, foregroundColor, backgroundColor, backgroundAlpha);
 
-			//Render small tags
-			stack.translate(0.0D, 10, 0.0D);
-			stack.scale(0.75f, 0.75f, 0.75f);
-			boolean textDrawn = false;
-			List<Component> tooltip = item.getItem().getTooltipLines(null, TooltipFlag.Default.NORMAL);
-			if (tooltip.size() >= 2) {
-				Component tooltipRarity = tooltip.get(1);
 
-				//Render dmcloot rarity small tags
-				if (Configuration.DMCLOOT_COMPAT_RARITY.get() && ModList.get().isLoaded("dmcloot")) {
-					if (item.getItem().hasTag() && item.getItem().getTag().contains("dmcloot.rarity")) {
-						Color rarityColor = Configuration.WHITE_RARITIES.get() ? Color.WHITE : getRawColor(tooltipRarity);
-						TranslatableComponent translatedRarity = new TranslatableComponent("rarity.dmcloot." + item.getItem().getTag().getString("dmcloot.rarity"));
-						RenderText(fontrenderer, stack, buffer, translatedRarity.getString(), rarityColor.getRGB(), backgroundColor, backgroundAlpha);
-						textDrawn = true;
-					}
-				}
-
-				//Render custom rarities
-				if (!textDrawn && Configuration.CUSTOM_RARITIES.get().contains(tooltipRarity.getString())) {
-					Color rarityColor = Configuration.WHITE_RARITIES.get() ? Color.WHITE : getRawColor(tooltipRarity);
-					foregroundColor = new Color(rarityColor.getRed(), rarityColor.getGreen(), rarityColor.getBlue(), (int) (255 * foregroundAlpha)).getRGB();
-					backgroundColor = new Color(rarityColor.getRed(), rarityColor.getGreen(), rarityColor.getBlue(), (int) (255 * backgroundAlpha)).getRGB();
-					RenderText(fontrenderer, stack, buffer, tooltipRarity.getString(), foregroundColor, backgroundColor, backgroundAlpha);
-				}
-			}
+			DrawRarity(item, foregroundAlpha, backgroundAlpha, fontrenderer, stack, buffer);
 
 			stack.popPose();
 		}
 	}
+
+	private static void DrawRarity(ItemEntity item,
+								   float foregroundAlpha,
+								   float backgroundAlpha,
+								   Font fontRenderer,
+								   PoseStack stack,
+								   MultiBufferSource buffer
+	) {
+		//Render small tags
+		stack.translate(0.0D, 10, 0.0D);
+		stack.scale(0.75f, 0.75f, 0.75f);
+
+		List<Component> tooltip = item.getItem().getTooltip(null, TooltipFlag.Default.NORMAL);
+
+
+        if (tooltip.size() < 2) {
+            return;
+        }
+		boolean textDrawn = false;
+
+        Component tooltipRarity = tooltip.get(1);
+
+        //Render dmcloot rarity small tags
+
+		var rarityString = tooltipRarity.getString();
+
+        //Render custom rarities
+        if (textDrawn)
+			return;
+
+
+		if (!(Configuration.CUSTOM_RARITIES.get().contains(rarityString) ))//|| AlwaysHasRarity(item.getItem())))
+			return;
+
+
+        Color rarityColor = Configuration.WHITE_RARITIES.get() ? Color.WHITE : getRawColor(tooltipRarity);
+        int foregroundColor = new Color(rarityColor.getRed(), rarityColor.getGreen(), rarityColor.getBlue(), (int) (255 * foregroundAlpha)).getRGB();
+		int backgroundColor = new Color(rarityColor.getRed(), rarityColor.getGreen(), rarityColor.getBlue(), (int) (255 * backgroundAlpha)).getRGB();
+        RenderText(fontRenderer, stack, buffer, rarityString, foregroundColor, backgroundColor, backgroundAlpha);
+    }
+
+	// private static boolean AlwaysHasRarity(ItemStack item) {
+	// 	List<String> overrides = LootBeams.config.alwaysDrawRaritiesOn;
+	// 	if (overrides.isEmpty())
+	// 		return false;
+
+	// 	for (String name : overrides.stream().filter((s) -> (!s.isEmpty())).toList()) {
+	// 		ResourceLocation registry = ResourceLocation.tryParse(name.replace("#", ""));
+
+	// 		//Modid
+	// 		if (!name.contains(":"))
+	// 			if (BuiltInRegistries.ITEM.getId(item.getItem()).getNamespace().equals(name))
+	// 				return true;
+
+	// 		if (registry == null)
+	// 			continue;
+
+	// 		//Tag
+	// 		if (name.startsWith("#")) {
+	// 			Optional<RegistryEntryList.Named<Item>> tag = BuiltInRegistries.ITEM.streamTagsAndEntries().filter(pair -> pair.getFirst().id().equals(registry))
+	// 					.findFirst().map(Pair::getSecond);
+	// 			//					Optional<HolderSet.Named<Item>> tag = Registry.ITEM.getTag(TagKey.create(Registry.ITEM_REGISTRY, registry));
+	// 			if (tag.isPresent() && tag.get().contains(BuiltInRegistries.ITEM.getEntry(BuiltInRegistries.ITEM.getKey(item.getItem()).get()).get())) {
+	// 				return true;
+	// 			}
+	// 		}
+
+	// 		//Item
+	// 		Optional<Item> registryItem = BuiltInRegistries.ITEM.getOrEmpty(registry);
+
+	// 		if (registryItem.isPresent() && registryItem.get().asItem() == item.getItem())
+	// 			return true;
+	// 	}
+	// 	return false;
+	// }
 
 	private static void RenderText(Font fontRenderer, PoseStack stack, MultiBufferSource buffer, String text, int foregroundColor, int backgroundColor, float backgroundAlpha) {
 		if (Configuration.BORDERS.get()) {
@@ -182,6 +246,7 @@ public class LootBeamRenderer extends RenderType {
 			fontRenderer.drawInBatch(text, (float) (-fontRenderer.width(text) / 2), 0f, foregroundColor, false, stack.last().pose(), buffer, false, backgroundColor, 15728864);
 		}
 	}
+
 
 	/**
 	 * Returns the color from the item's name, rarity, tag, or override.
@@ -248,9 +313,9 @@ public class LootBeamRenderer extends RenderType {
 	}
 
 	private static void renderPart(PoseStack stack, VertexConsumer builder, float red, float green, float blue, float alpha, float height, float radius_1, float radius_2, float radius_3, float radius_4, float radius_5, float radius_6, float radius_7, float radius_8) {
-		PoseStack.Pose matrixentry = stack.last();
-		Matrix4f matrixpose = matrixentry.pose();
-		Matrix3f matrixnormal = matrixentry.normal();
+		PoseStack.Entry matrixentry = stack.last();
+		Matrix4f matrixpose = matrixentry.getPositionMatrix();
+		Matrix3f matrixnormal = matrixentry.getNormalMatrix();
 		renderQuad(matrixpose, matrixnormal, builder, red, green, blue, alpha, height, radius_1, radius_2, radius_3, radius_4);
 		renderQuad(matrixpose, matrixnormal, builder, red, green, blue, alpha, height, radius_7, radius_8, radius_5, radius_6);
 		renderQuad(matrixpose, matrixnormal, builder, red, green, blue, alpha, height, radius_3, radius_4, radius_7, radius_8);
@@ -268,9 +333,17 @@ public class LootBeamRenderer extends RenderType {
 		builder.vertex(pose, x, y, z).color(red, green, blue, alpha).uv(texu, texv).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(15728880).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
 	}
 
+	private static String toBinaryName(String mapName){
+		return "L" + mapName.replace('.', '/') + ";";
+	}
+
 	private static RenderType createRenderType() {
-		RenderType.CompositeState state = RenderType.CompositeState.builder().setShaderState(RENDERTYPE_BEACON_BEAM_SHADER).setTextureState(new RenderStateShard.TextureStateShard(LOOT_BEAM_TEXTURE, false, false)).setTransparencyState(TRANSLUCENT_TRANSPARENCY).setWriteMaskState(COLOR_WRITE).createCompositeState(false);
-		return RenderType.create("loot_beam", DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, 256, false, true, state);
+		RenderType.CompositeState state = RenderType.CompositeState.builder().setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
+            .setTextureState(new RenderStateShard.TextureStateShard(LOOT_BEAM_TEXTURE, false, false))
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false);
+		return RenderType.create("loot_beam", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 256, false, true, state); 
 	}
 
 	/**

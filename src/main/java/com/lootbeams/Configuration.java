@@ -2,9 +2,9 @@ package com.lootbeams;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -14,38 +14,39 @@ import java.util.stream.Collectors;
 @Mod.EventBusSubscriber
 public class Configuration {
 
-	public static ForgeConfigSpec CLIENT_CONFIG;
+	public static ModConfigSpec CLIENT_CONFIG;
 
-	public static ForgeConfigSpec.BooleanValue ALL_ITEMS;
-	public static ForgeConfigSpec.BooleanValue ONLY_EQUIPMENT;
-	public static ForgeConfigSpec.BooleanValue ONLY_RARE;
-	public static ForgeConfigSpec.ConfigValue<List<String>> WHITELIST;
-	public static ForgeConfigSpec.ConfigValue<List<String>> BLACKLIST;
-	public static ForgeConfigSpec.ConfigValue<List<String>> COLOR_OVERRIDES;
+	public static ModConfigSpec.BooleanValue ALL_ITEMS;
+	public static ModConfigSpec.BooleanValue ONLY_EQUIPMENT;
+	public static ModConfigSpec.BooleanValue ONLY_RARE;
+	public static ModConfigSpec.ConfigValue<List<String>> WHITELIST;
+	public static ModConfigSpec.ConfigValue<List<String>> BLACKLIST;
+	public static ModConfigSpec.ConfigValue<List<String>> COLOR_OVERRIDES;
 
-	public static ForgeConfigSpec.BooleanValue RENDER_NAME_COLOR;
-	public static ForgeConfigSpec.BooleanValue RENDER_RARITY_COLOR;
-	public static ForgeConfigSpec.DoubleValue BEAM_RADIUS;
-	public static ForgeConfigSpec.DoubleValue BEAM_HEIGHT;
-	public static ForgeConfigSpec.DoubleValue BEAM_Y_OFFSET;
-	public static ForgeConfigSpec.DoubleValue BEAM_ALPHA;
-	public static ForgeConfigSpec.DoubleValue RENDER_DISTANCE;
+	public static ModConfigSpec.BooleanValue RENDER_NAME_COLOR;
+	public static ModConfigSpec.BooleanValue RENDER_RARITY_COLOR;
+	public static ModConfigSpec.DoubleValue BEAM_RADIUS;
+	public static ModConfigSpec.DoubleValue BEAM_HEIGHT;
+	public static ModConfigSpec.DoubleValue BEAM_Y_OFFSET;
+	public static ModConfigSpec.DoubleValue BEAM_ALPHA;
+	public static ModConfigSpec.DoubleValue FADE_DISTANCE;
+	public static ModConfigSpec.DoubleValue RENDER_DISTANCE;
 
-	public static ForgeConfigSpec.BooleanValue BORDERS;
-	public static ForgeConfigSpec.BooleanValue RENDER_NAMETAGS;
-	public static ForgeConfigSpec.BooleanValue RENDER_NAMETAGS_ONLOOK;
-	public static ForgeConfigSpec.BooleanValue RENDER_STACKCOUNT;
-	public static ForgeConfigSpec.DoubleValue NAMETAG_LOOK_SENSITIVITY;
-	public static ForgeConfigSpec.DoubleValue NAMETAG_TEXT_ALPHA;
-	public static ForgeConfigSpec.DoubleValue NAMETAG_BACKGROUND_ALPHA;
-	public static ForgeConfigSpec.DoubleValue NAMETAG_SCALE;
-	public static ForgeConfigSpec.DoubleValue NAMETAG_Y_OFFSET;
-	public static ForgeConfigSpec.BooleanValue DMCLOOT_COMPAT_RARITY;
-	public static ForgeConfigSpec.ConfigValue<List<String>> CUSTOM_RARITIES;
-	public static ForgeConfigSpec.BooleanValue WHITE_RARITIES;
+	public static ModConfigSpec.BooleanValue BORDERS;
+	public static ModConfigSpec.BooleanValue RENDER_NAMETAGS;
+	public static ModConfigSpec.BooleanValue RENDER_NAMETAGS_ONLOOK;
+	public static ModConfigSpec.BooleanValue RENDER_STACKCOUNT;
+	public static ModConfigSpec.DoubleValue NAMETAG_LOOK_SENSITIVITY;
+	public static ModConfigSpec.DoubleValue NAMETAG_TEXT_ALPHA;
+	public static ModConfigSpec.DoubleValue NAMETAG_BACKGROUND_ALPHA;
+	public static ModConfigSpec.DoubleValue NAMETAG_SCALE;
+	public static ModConfigSpec.DoubleValue NAMETAG_Y_OFFSET;
+	public static ModConfigSpec.BooleanValue DMCLOOT_COMPAT_RARITY;
+	public static ModConfigSpec.ConfigValue<List<String>> CUSTOM_RARITIES;
+	public static ModConfigSpec.BooleanValue WHITE_RARITIES;
 
 	static {
-		ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
+		ModConfigSpec.Builder clientBuilder = new ModConfigSpec.Builder();
 
 		clientBuilder.comment("Beam Config").push("Loot Beams");
 		RENDER_NAME_COLOR = clientBuilder.comment("If beams should be colored the same as the Items name (excludes name colors from rarity). This has priority over render_rarity_color.").define("render_name_color", true);
@@ -54,6 +55,7 @@ public class Configuration {
 		BEAM_HEIGHT = clientBuilder.comment("The height of the Loot Beam.").defineInRange("beam_height", 1D, 0D, 10D);
 		BEAM_Y_OFFSET = clientBuilder.comment("The Y-offset of the loot beam.").defineInRange("beam_y_offset", 0D, -30D, 30D);
 		BEAM_ALPHA = clientBuilder.comment("Transparency of the Loot Beam.").defineInRange("beam_alpha", 0.85D, 0D, 1D);
+		FADE_DISTANCE = clientBuilder.comment("Fade Distance of the Loot Beam.").defineInRange("fade_distance", 2.0D, 0D, 5D);
 		RENDER_DISTANCE = clientBuilder.comment("How close the player has to be to see the beam. (note: ItemEntities stop rendering at 24 blocks, so that is the limit for beams)").defineInRange("render_distance", 24D, 0D, 24D);
 		COLOR_OVERRIDES = clientBuilder.comment("Overrides an item's beam color with hex color. Must follow the specific format: (registryname=hexcolor) Or (#tagname=hexcolor). Example: \"minecraft:stone=0xFFFFFF\". This also accepts modids.").define("color_overrides", new ArrayList<>());
 
@@ -103,7 +105,7 @@ public class Configuration {
 
 					//Modid
 					if (!nameIn.contains(":")) {
-						if (i.getRegistryName().getNamespace().equals(nameIn)) {
+						if (BuiltInRegistries.ITEM.getKey(i).getNamespace().equals(nameIn)) {
 							return colorIn;
 						}
 
@@ -118,7 +120,7 @@ public class Configuration {
 						}
 
 						//Item
-						Item registryItem = ForgeRegistries.ITEMS.getValue(registry);
+						Item registryItem = BuiltInRegistries.ITEM.get(registry);
 						if (registryItem != null && registryItem.asItem() == i) {
 							return colorIn;
 						}
