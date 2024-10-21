@@ -41,7 +41,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.TickEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
-import net.neoforged.neoforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -54,17 +54,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
 
-	public static void init(FMLClientSetupEvent ignored) {
-		ignored.enqueueWork(() -> {
-			NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
-			NeoForge.EVENT_BUS.addListener(ClientSetup::onItemCreation);
-			NeoForge.EVENT_BUS.addListener(ClientSetup::entityRemoval);
-			NeoForge.EVENT_BUS.addListener(ClientSetup::onLevelRender);
-		});
-	}
+	// public static void init(FMLClientSetupEvent ignored) {
+	// 	ignored.enqueueWork(() -> {
+	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
+	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::onItemCreation);
+	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::entityRemoval);
+	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::onLevelRender);
+	// 	});
+	// }
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -141,7 +141,7 @@ public class ClientSetup {
 		cameraRotation.transform(position);
 
 		// Account for view bobbing
-		if (mc.options.bobView.get() && mc.getCameraEntity() instanceof Player) {
+		if (mc.options.bobView().get() && mc.getCameraEntity() instanceof Player) {
 			Player player = (Player) mc.getCameraEntity();
 			float playerStep = player.walkDist - player.walkDistO;
 			float stepSize = -(player.walkDist + playerStep * partialTicks);
@@ -157,7 +157,8 @@ public class ClientSetup {
 		}
 
 		Window window = mc.getWindow();
-		float screenSize = window.getGuiScaledHeight() / 2f / position.z() / (float) Math.tan(Math.toRadians(mc.gameRenderer.getFov(camera, partialTicks, true) / 2f));
+		float fov = mc.options.fov().get().floatValue();
+		float screenSize = window.getGuiScaledHeight() / 2f / position.z() / (float) Math.tan(Math.toRadians(fov / 2f));
 		position.mul(-screenSize, -screenSize, 1f);
 		position.add(window.getGuiScaledWidth() / 2f, window.getGuiScaledHeight() / 2f, 0f);
 
@@ -191,7 +192,7 @@ public class ClientSetup {
 		}
 		return null;
 	}
-
+	@SubscribeEvent
 	public static void onItemCreation(EntityJoinLevelEvent event){
 		if (event.getEntity() instanceof ItemEntity ie) {
 			LootBeamRenderer.TOOLTIP_CACHE.computeIfAbsent(ie, itemEntity -> itemEntity.getItem().getTooltipLines(null, TooltipFlag.Default.NORMAL));
@@ -201,7 +202,7 @@ public class ClientSetup {
 		}
 	}
 	public static final List<Consumer<PoseStack>> delayedRenders = new ArrayList<>();
-
+	@SubscribeEvent
 	public static void onLevelRender(RenderLevelStageEvent event) {
 		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
 			PoseStack stack = event.getPoseStack();
@@ -215,7 +216,7 @@ public class ClientSetup {
 			delayedRenders.clear();
 		}
 	}
-
+	@SubscribeEvent
 	public static void entityRemoval(EntityLeaveLevelEvent event) {
 		if (event.getEntity() instanceof ItemEntity ie) {
 			LootBeamRenderer.TOOLTIP_CACHE.remove(ie);
@@ -253,7 +254,7 @@ public class ClientSetup {
 			}
 		}
 	}
-
+	@SubscribeEvent
 	public static void onRenderNameplate(RenderNameTagEvent event) {
 		if (!(event.getEntity() instanceof ItemEntity itemEntity)
 				|| Minecraft.getInstance().player.distanceToSqr(itemEntity) > Math.pow(Configuration.RENDER_DISTANCE.get(), 2)) {

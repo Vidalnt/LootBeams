@@ -9,11 +9,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.api.distmarker.Dist;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RenderGuiOverlayEvent;
-import net.neoforged.neoforge.client.event.TextureStitchEvent;
-import net.neoforged.neoforge.eventbus.api.SubscribeEvent;
+//import net.neoforged.client.event.TextureStitchEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 
 import java.io.IOException;
@@ -27,12 +27,24 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void registerShaders(RegisterShadersEvent event) throws IOException {
-        registerShader(event, "particle_add", DefaultVertexFormat.PARTICLE, (s) -> {
+        // Crear el objeto ShaderInfo:
+        ShaderInfo shaderInfo = new ShaderInfo();
+        shaderInfo.shaderName = "particle_add";
+        shaderInfo.vertexFormat = DefaultVertexFormat.PARTICLE;
+        shaderInfo.consumer = (s) -> {
             PARTICLE_ADDITIVE_MULTIPLY = s;
-        });
+        };
+
+        // Registrar el shader:
+        event.registerShader(
+            new ShaderInstance(event.getResourceProvider(), new ResourceLocation("lootbeams", shaderInfo.shaderName), shaderInfo.vertexFormat),
+            shaderInfo.consumer
+        );
     }
 
-    private static void registerShader(RegisterShadersEvent event, String id, VertexFormat format, Consumer<ShaderInstance> callback) throws IOException {
-        event.registerShader(new ShaderInstance(event.getResourceProvider(), new ResourceLocation("lootbeams", id), format), callback);
+    public static class ShaderInfo {
+        String shaderName;
+        VertexFormat vertexFormat;
+        Consumer<ShaderInstance> consumer;
     }
 }

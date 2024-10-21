@@ -3,8 +3,10 @@ package com.lootbeams.mixin.client;
 import com.lootbeams.Configuration;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.OutlineBufferSource;
+import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.entity.ItemEntityRenderer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
@@ -14,6 +16,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
+
+import java.lang.reflect.Field;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -52,8 +57,15 @@ public class ItemEntityRendererMixin {
             int b = color & 0xFF;
             outlineProvider.setColor(r,g,b,255);
             instance.render(flag1, idc, posestack$pose, ps, outlineProvider, light, rendertype, model);
-            Minecraft.getInstance().levelRenderer.renderBuffers.outlineBufferSource().endOutlineBatch();
-            Minecraft.getInstance().levelRenderer.entityEffect.process(Minecraft.getInstance().getFrameTime());
+            outlineProvider.endOutlineBatch();
+            try {
+                Field entityEffectField = LevelRenderer.class.getDeclaredField("entityEffect");
+                entityEffectField.setAccessible(true);
+                PostChain entityEffect = (PostChain) entityEffectField.get(Minecraft.getInstance().levelRenderer);
+                entityEffect.process(Minecraft.getInstance().getFrameTime());
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            } 
             Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
         }
     }

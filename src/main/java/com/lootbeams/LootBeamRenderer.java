@@ -11,12 +11,14 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -38,6 +40,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.awt.*;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -208,9 +211,18 @@ public class LootBeamRenderer extends RenderType {
         Minecraft mc = Minecraft.getInstance();
         //make the particle brighter
         alpha *= 1.5f;
-        VFXParticle provider = new VFXParticle(mc.level, mc.particleEngine.textureAtlas.getSprite(spriteLocation), red, green, blue, alpha, lifetime, size, pos, motion, 0, false, true);
-        provider.setParticleCenter(sourcePos);
-        mc.particleEngine.add(provider);
+        try {
+            Field textureAtlasField = ParticleEngine.class.getDeclaredField("textureAtlas");
+            textureAtlasField.setAccessible(true);
+            TextureAtlas textureAtlas = (TextureAtlas) textureAtlasField.get(mc.particleEngine);
+
+            VFXParticle provider = new VFXParticle(mc.level, textureAtlas.getSprite(spriteLocation), red, green, blue, alpha, lifetime, size, pos, motion, 0, false, true);
+            provider.setParticleCenter(sourcePos);
+            mc.particleEngine.add(provider);
+
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+        	LootBeams.LOGGER.error("Error textureAtlas", e);
+        } 
     }
 
     private static void renderGlow(PoseStack stack, VertexConsumer builder, float red, float green, float blue, float alpha, float radius) {
