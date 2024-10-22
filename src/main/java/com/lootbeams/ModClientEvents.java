@@ -27,24 +27,12 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void registerShaders(RegisterShadersEvent event) throws IOException {
-        // Crear el objeto ShaderInfo:
-        ShaderInfo shaderInfo = new ShaderInfo();
-        shaderInfo.shaderName = "particle_add";
-        shaderInfo.vertexFormat = DefaultVertexFormat.PARTICLE;
-        shaderInfo.consumer = (s) -> {
+        registerShader(event, "particle_add", DefaultVertexFormat.PARTICLE, (s) -> {
             PARTICLE_ADDITIVE_MULTIPLY = s;
-        };
-
-        // Registrar el shader:
-        event.registerShader(
-            new ShaderInstance(event.getResourceProvider(), new ResourceLocation("lootbeams", shaderInfo.shaderName), shaderInfo.vertexFormat),
-            shaderInfo.consumer
-        );
+        });
     }
 
-    public static class ShaderInfo {
-        String shaderName;
-        VertexFormat vertexFormat;
-        Consumer<ShaderInstance> consumer;
+    private static void registerShader(RegisterShadersEvent event, String id, VertexFormat format, Consumer<ShaderInstance> callback) throws IOException {
+        event.registerShader(new ShaderInstance(event.getResourceProvider(), new ResourceLocation("lootbeams", id), format), callback);
     }
 }
