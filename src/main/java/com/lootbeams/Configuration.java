@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 // Clase de configuración de LootBeams
@@ -30,15 +31,15 @@ public class Configuration {
 
     public static final ModConfigSpec.BooleanValue ALL_ITEMS = BUILDER
             .comment("If all Items Loot Beams should be rendered. Has priority over only_equipment and only_rare.")
-            .define("all_items", false);
+            .define("all_items", true);
 
     public static final ModConfigSpec.BooleanValue ONLY_RARE = BUILDER
             .comment("If Loot Beams should only be rendered on items with rarity.")
-            .define("only_rare", true);
+            .define("only_rare", false);
 
     public static final ModConfigSpec.BooleanValue ONLY_EQUIPMENT = BUILDER
             .comment("If Loot Beams should only be rendered on equipment. (Equipment includes: Swords, Tools, Armor, Shields, Bows, Crossbows, Tridents, Arrows, and Fishing Rods)")
-            .define("only_equipment", true);
+            .define("only_equipment", false);
 
     public static final ModConfigSpec.BooleanValue RENDER_NAME_COLOR = BUILDER
             .comment("If beams should be colored the same as the Items name (excludes name colors from rarity). This has priority over render_rarity_color.")
@@ -155,7 +156,7 @@ public class Configuration {
     // Opciones de tipo Double:
     public static final ModConfigSpec.DoubleValue BEAM_ALPHA = BUILDER
             .comment("Transparency of the Loot Beam.")
-            .defineInRange("beam_alpha", 0.75D, 0D, 1D);
+            .defineInRange("beam_alpha", 0.85D, 0D, 1D);
 
     public static final ModConfigSpec.DoubleValue BEAM_FADE_DISTANCE = BUILDER
             .comment("The distance from the player the beam should start fading.")
@@ -229,6 +230,19 @@ public class Configuration {
             .comment("The width of the trail.")
             .defineInRange("trail_width", 0.2D, 0.00001D, 10D);
 
+    // Opciones de tipo Double:
+    public static final ModConfigSpec.DoubleValue BEAM_RADIUS = BUILDER
+            .comment("The radius of the beam.")
+            .defineInRange("beam_radius", 1D, 0D, 5D);
+
+    public static final ModConfigSpec.DoubleValue BEAM_HEIGHT = BUILDER
+            .comment("The height of the beam.")
+            .defineInRange("beam_height", 1D, 0D, 10D);
+
+    public static final ModConfigSpec.DoubleValue BEAM_Y_OFFSET = BUILDER
+            .comment("The Y-offset of the beam.")
+            .defineInRange("beam_y_offset", 0D, -30D, 30D);
+
     // Opciones de tipo Int:
     public static final ModConfigSpec.IntValue PARTICLE_LIFETIME = BUILDER
             .comment("The lifetime of the particles in ticks.")
@@ -243,17 +257,29 @@ public class Configuration {
             .defineInRange("trail_frequency", 1, 1, 200);
 
     // Opciones de tipo String (listas):
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> SOUND_ONLY_WHITELIST = BUILDER
+    public static final ModConfigSpec.ConfigValue<List<String>> WHITELIST = BUILDER
+            .comment("Registry names of items that Loot Beams should render on. Example: \"minecraft:stone\", \"minecraft:iron_ingot\", You can also specify modids for a whole mod's items.")
+            .defineListAllowEmpty("whitelist", new ArrayList<>(), Configuration::validateItemName);
+
+    public static final ModConfigSpec.ConfigValue<List<String>> BLACKLIST = BUILDER
+            .comment("Registry names of items that Loot Beams should NOT render on. This has priority over everything. You can also specify modids for a whole mod's items.")
+            .defineListAllowEmpty("blacklist", new ArrayList<>(), Configuration::validateItemName);
+
+    public static final ModConfigSpec.ConfigValue<List<String>> SOUND_ONLY_WHITELIST = BUILDER
             .comment("Registry names of items that sounds should play on. Example: \"minecraft:stone\", \"minecraft:iron_ingot\", You can also specify modids for a whole mod's items.")
-            .defineListAllowEmpty("sound_whitelist", new ArrayList<>());
+            .defineListAllowEmpty("sound_whitelist", new ArrayList<>(), Configuration::validateItemName);
 
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> SOUND_ONLY_BLACKLIST = BUILDER
+    public static final ModConfigSpec.ConfigValue<List<String>> SOUND_ONLY_BLACKLIST = BUILDER
             .comment("Registry names of items that sounds should NOT play on. This has priority over everything. You can also specify modids for a whole mod's items.")
-            .defineListAllowEmpty("sound_blacklist", new ArrayList<>());
+            .defineListAllowEmpty("sound_blacklist", new ArrayList<>(), Configuration::validateItemName);
 
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> CUSTOM_RARITIES = BUILDER
+    public static final ModConfigSpec.ConfigValue<List<String>> CUSTOM_RARITIES = BUILDER
             .comment("Define what the smaller tag should render on. Example: \"Exotic\", \"Ancient\". The string supplied has to be the tooltip line below the name. This is really only used for modpacks.")
             .define("custom_rarities", new ArrayList<>());
+
+    public static final ModConfigSpec.ConfigValue<List<String>> COLOR_OVERRIDES = BUILDER
+            .comment("Overrides an item's beam color with hex color. Must follow the specific format: (registryname=hexcolor) Or (#tagname=hexcolor). Example: \"minecraft:stone=0xFFFFFF\". This also accepts modids.")
+            .define("color_overrides", new ArrayList<>());
 
     // Especificación de configuración:
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -383,16 +409,6 @@ public class Configuration {
         nametagScale = NAMETAG_SCALE.get();
         nametagYOffset = NAMETAG_Y_OFFSET.get();
         soundVolume = SOUND_VOLUME.get();
-
-        // Convertir la lista de nombres de items en un conjunto de items:
-        whitelist = WHITELIST.get().stream()
-                .map(itemName -> BuiltInRegistries.ITEM.get(new ResourceLocation(itemName)))
-                .collect(Collectors.toSet());
-
-        blacklist = BLACKLIST.get().stream()
-                .map(itemName -> BuiltInRegistries.ITEM.get(new ResourceLocation(itemName)))
-                .collect(Collectors.toSet());
-
         customRarities = CUSTOM_RARITIES.get().stream().collect(Collectors.toSet());
         soundOnlyWhitelist = SOUND_ONLY_WHITELIST.get().stream().collect(Collectors.toSet());
         soundOnlyBlacklist = SOUND_ONLY_BLACKLIST.get().stream().collect(Collectors.toSet());
@@ -400,7 +416,7 @@ public class Configuration {
     }
 
     public static Color getColorFromItemOverrides(Item i) {
-        List<String> overrides = COLOR_OVERRIDES;
+        List<String> overrides = COLOR_OVERRIDES.get();
         if (overrides.size() > 0) {
             for (String unparsed : overrides.stream().filter((s) -> (!s.isEmpty())).collect(Collectors.toList())) {
                 String[] configValue = unparsed.split("=");
