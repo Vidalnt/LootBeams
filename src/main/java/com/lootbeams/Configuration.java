@@ -19,27 +19,26 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-// Clase de configuración de LootBeams
+
 @Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Configuration {
     public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    // Valores booleanos para las opciones de configuración:
     public static final ModConfigSpec.BooleanValue ITEMS_GLOW = BUILDER
             .comment("If items should glow.")
             .define("items_glow", false);
 
     public static final ModConfigSpec.BooleanValue ALL_ITEMS = BUILDER
             .comment("If all Items Loot Beams should be rendered. Has priority over only_equipment and only_rare.")
-            .define("all_items", true);
+            .define("all_items", false);
 
     public static final ModConfigSpec.BooleanValue ONLY_RARE = BUILDER
             .comment("If Loot Beams should only be rendered on items with rarity.")
-            .define("only_rare", false);
+            .define("only_rare", true);
 
     public static final ModConfigSpec.BooleanValue ONLY_EQUIPMENT = BUILDER
             .comment("If Loot Beams should only be rendered on equipment. (Equipment includes: Swords, Tools, Armor, Shields, Bows, Crossbows, Tridents, Arrows, and Fishing Rods)")
-            .define("only_equipment", false);
+            .define("only_equipment", true);
 
     public static final ModConfigSpec.BooleanValue RENDER_NAME_COLOR = BUILDER
             .comment("If beams should be colored the same as the Items name (excludes name colors from rarity). This has priority over render_rarity_color.")
@@ -153,10 +152,9 @@ public class Configuration {
             .comment("If sounds should only be played on equipment. (Equipment includes: Swords, Tools, Armor, Shields, Bows, Crossbows, Tridents, Arrows, and Fishing Rods)")
             .define("sound_only_equipment", false);
 
-    // Opciones de tipo Double:
     public static final ModConfigSpec.DoubleValue BEAM_ALPHA = BUILDER
             .comment("Transparency of the Loot Beam.")
-            .defineInRange("beam_alpha", 0.85D, 0D, 1D);
+            .defineInRange("beam_alpha", 0.75D, 0D, 1D);
 
     public static final ModConfigSpec.DoubleValue BEAM_FADE_DISTANCE = BUILDER
             .comment("The distance from the player the beam should start fading.")
@@ -230,20 +228,22 @@ public class Configuration {
             .comment("The width of the trail.")
             .defineInRange("trail_width", 0.2D, 0.00001D, 10D);
 
-    // Opciones de tipo Double:
     public static final ModConfigSpec.DoubleValue BEAM_RADIUS = BUILDER
             .comment("The radius of the beam.")
-            .defineInRange("beam_radius", 1D, 0D, 5D);
+            .defineInRange("beam_radius", 0.55D, 0D, 5D);
 
     public static final ModConfigSpec.DoubleValue BEAM_HEIGHT = BUILDER
             .comment("The height of the beam.")
-            .defineInRange("beam_height", 1D, 0D, 10D);
+            .defineInRange("beam_height", 1.5D, 0D, 10D);
 
     public static final ModConfigSpec.DoubleValue BEAM_Y_OFFSET = BUILDER
             .comment("The Y-offset of the beam.")
-            .defineInRange("beam_y_offset", 0D, -30D, 30D);
+            .defineInRange("beam_y_offset", 0.5D, -30D, 30D);
 
-    // Opciones de tipo Int:
+    public static final ModConfigSpec.BooleanValue COMMON_SHORTER_BEAM = BUILDER
+            .comment("If the Loot Beam should be shorter for common items.")
+            .define("common_shorter_beam", true);
+
     public static final ModConfigSpec.IntValue PARTICLE_LIFETIME = BUILDER
             .comment("The lifetime of the particles in ticks.")
             .defineInRange("particle_lifetime", 15, 1, 100);
@@ -256,22 +256,27 @@ public class Configuration {
             .comment("The frequency of the trail. The maximum value this should be is the length. The lower the frequency, the smoother the trail.")
             .defineInRange("trail_frequency", 1, 1, 200);
 
-    // Opciones de tipo String (listas):
+    public static final ModConfigSpec.DoubleValue PARTICLE_COUNT = BUILDER
+            .comment("The amount of particles to spawn per second.")
+            .defineInRange("particle_count", 15D, 1D, 20D);
+
     public static final ModConfigSpec.ConfigValue<List<String>> WHITELIST = BUILDER
-            .comment("Registry names of items that Loot Beams should render on. Example: \"minecraft:stone\", \"minecraft:iron_ingot\", You can also specify modids for a whole mod's items.")
-            .defineListAllowEmpty("whitelist", new ArrayList<>(), Configuration::validateItemName);
+            .comment("Registry names of items that Loot Beams should render on. Example: \"minecraft:stone\", \"minecraft:iron_ingot\".")
+            .define("whitelist", new ArrayList<>());
+
 
     public static final ModConfigSpec.ConfigValue<List<String>> BLACKLIST = BUILDER
-            .comment("Registry names of items that Loot Beams should NOT render on. This has priority over everything. You can also specify modids for a whole mod's items.")
-            .defineListAllowEmpty("blacklist", new ArrayList<>(), Configuration::validateItemName);
+            .comment("Registry names of items that Loot Beams should NOT render on. You can specify modids for a whole mod's items.")
+            .define("blacklist", new ArrayList<>());
 
     public static final ModConfigSpec.ConfigValue<List<String>> SOUND_ONLY_WHITELIST = BUILDER
-            .comment("Registry names of items that sounds should play on. Example: \"minecraft:stone\", \"minecraft:iron_ingot\", You can also specify modids for a whole mod's items.")
-            .defineListAllowEmpty("sound_whitelist", new ArrayList<>(), Configuration::validateItemName);
+            .comment("Registry names of items that sounds should play on. Example: \"minecraft:stone\", \"minecraft:iron_ingot\".")
+            .define("sound_whitelist", new ArrayList<>());
 
     public static final ModConfigSpec.ConfigValue<List<String>> SOUND_ONLY_BLACKLIST = BUILDER
-            .comment("Registry names of items that sounds should NOT play on. This has priority over everything. You can also specify modids for a whole mod's items.")
-            .defineListAllowEmpty("sound_blacklist", new ArrayList<>(), Configuration::validateItemName);
+            .comment("Registry names of items that sounds should NOT render on. This has priority over everything.")
+            .define("sound_blacklist", new ArrayList<>());
+
 
     public static final ModConfigSpec.ConfigValue<List<String>> CUSTOM_RARITIES = BUILDER
             .comment("Define what the smaller tag should render on. Example: \"Exotic\", \"Ancient\". The string supplied has to be the tooltip line below the name. This is really only used for modpacks.")
@@ -281,10 +286,8 @@ public class Configuration {
             .comment("Overrides an item's beam color with hex color. Must follow the specific format: (registryname=hexcolor) Or (#tagname=hexcolor). Example: \"minecraft:stone=0xFFFFFF\". This also accepts modids.")
             .define("color_overrides", new ArrayList<>());
 
-    // Especificación de configuración:
     public static final ModConfigSpec SPEC = BUILDER.build();
 
-    // Variables para guardar los valores de configuración:
     public static boolean itemsGlow;
     public static boolean allItems;
     public static boolean onlyRare;
@@ -339,20 +342,17 @@ public class Configuration {
     public static double nametagScale;
     public static double nametagYOffset;
     public static double soundVolume;
+    public static double particleCount;
 
-    public static Set<Item> whitelist;
-    public static Set<Item> blacklist;
+    public static boolean commonShorterBeam;
+
+    public static List<String> whitelist; 
+    public static List<String> blacklist; 
     public static Set<String> customRarities;
     public static Set<String> soundOnlyWhitelist;
     public static Set<String> soundOnlyBlacklist;
     public static List<String> colorOverrides;
 
-    // Método para validar los nombres de los items en la lista blanca:
-    public static boolean validateItemName(final Object obj) {
-        return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(new ResourceLocation(itemName));
-    }
-
-    // Método para cargar la configuración:
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         itemsGlow = ITEMS_GLOW.get();
@@ -409,10 +409,15 @@ public class Configuration {
         nametagScale = NAMETAG_SCALE.get();
         nametagYOffset = NAMETAG_Y_OFFSET.get();
         soundVolume = SOUND_VOLUME.get();
+        particleCount = PARTICLE_COUNT.get();
+        commonShorterBeam = COMMON_SHORTER_BEAM.get();
+
         customRarities = CUSTOM_RARITIES.get().stream().collect(Collectors.toSet());
         soundOnlyWhitelist = SOUND_ONLY_WHITELIST.get().stream().collect(Collectors.toSet());
         soundOnlyBlacklist = SOUND_ONLY_BLACKLIST.get().stream().collect(Collectors.toSet());
         colorOverrides = COLOR_OVERRIDES.get();
+        whitelist = WHITELIST.get();
+        blacklist = BLACKLIST.get();
     }
 
     public static Color getColorFromItemOverrides(Item i) {

@@ -39,6 +39,7 @@ import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import net.neoforged.neoforge.client.gui.overlay.VanillaGuiOverlay;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.TickEvent;
+import net.neoforged.neoforge.event.TickEvent.ClientTickEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -54,20 +55,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientSetup {
-
-	// public static void init(FMLClientSetupEvent ignored) {
-	// 	ignored.enqueueWork(() -> {
-	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
-	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::onItemCreation);
-	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::entityRemoval);
-	// 		NeoForge.EVENT_BUS.addListener(ClientSetup::onLevelRender);
-	// 	});
-	// }
+	
+	public static void init(FMLClientSetupEvent ignored) {
+	 	ignored.enqueueWork(() -> {
+	 		NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
+	 		NeoForge.EVENT_BUS.addListener(ClientSetup::onItemCreation);
+	 		NeoForge.EVENT_BUS.addListener(ClientSetup::entityRemoval);
+	 		NeoForge.EVENT_BUS.addListener(ClientSetup::onLevelRender);
+	 	});
+	}
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
+	public static void onClientTick(ClientTickEvent event) {
 		if(event.phase.equals(TickEvent.Phase.START)) {
 			if(playSoundCooldown > 0) playSoundCooldown--;
 		}
@@ -192,7 +193,7 @@ public class ClientSetup {
 		}
 		return null;
 	}
-	@SubscribeEvent
+	//@SubscribeEvent
 	public static void onItemCreation(EntityJoinLevelEvent event){
 		if (event.getEntity() instanceof ItemEntity ie) {
 			LootBeamRenderer.TOOLTIP_CACHE.computeIfAbsent(ie, itemEntity -> itemEntity.getItem().getTooltipLines(null, TooltipFlag.Default.NORMAL));
@@ -202,7 +203,7 @@ public class ClientSetup {
 		}
 	}
 	public static final List<Consumer<PoseStack>> delayedRenders = new ArrayList<>();
-	@SubscribeEvent
+	//@SubscribeEvent
 	public static void onLevelRender(RenderLevelStageEvent event) {
 		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
 			PoseStack stack = event.getPoseStack();
@@ -216,7 +217,7 @@ public class ClientSetup {
 			delayedRenders.clear();
 		}
 	}
-	@SubscribeEvent
+	//@SubscribeEvent
 	public static void entityRemoval(EntityLeaveLevelEvent event) {
 		if (event.getEntity() instanceof ItemEntity ie) {
 			LootBeamRenderer.TOOLTIP_CACHE.remove(ie);
@@ -254,7 +255,7 @@ public class ClientSetup {
 			}
 		}
 	}
-	@SubscribeEvent
+	//@SubscribeEvent
 	public static void onRenderNameplate(RenderNameTagEvent event) {
 		if (!(event.getEntity() instanceof ItemEntity itemEntity)
 				|| Minecraft.getInstance().player.distanceToSqr(itemEntity) > Math.pow(Configuration.RENDER_DISTANCE.get(), 2)) {
