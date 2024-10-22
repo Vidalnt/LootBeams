@@ -1,7 +1,6 @@
 package com.lootbeams;
 
 import com.google.common.collect.Lists;
-//import com.lootbeams.compat.ApotheosisCompat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -315,11 +314,6 @@ public class LootBeamRenderer extends RenderType {
 
     public static String getRarity(ItemStack stack) {
         String rarity = stack.getRarity().name().toLowerCase();
-        // if (ModList.get().isLoaded("apotheosis")) {
-        //     if (ApotheosisCompat.isApotheosisItem(stack)) {
-        //         rarity = ApotheosisCompat.getRarityName(stack);
-        //     }
-        // }
         rarity = rarity.replace(":",".").replace("_",".");
         if(I18n.exists(rarity)){
             return I18n.get(rarity);
