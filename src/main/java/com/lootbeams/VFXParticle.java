@@ -40,29 +40,29 @@ public class VFXParticle extends TextureSheetParticle {
         this.gravity = gravity;
         this.hasPhysics = collision;
         this.fullbright = fullbright;
-        this.hasTrail = Math.random() < Configuration.TRAIL_CHANCE.get();
-        if(hasTrail && Configuration.TRAIL_PARTICLES_INVISIBLE.get()){
-            this.setSize(0.00001f);
-        }
-        if (Configuration.TRAILS.get() && hasTrail) {
-            trail = new Trail(
-                    FastColor.ARGB32.color((int) (r * 255), (int) (g * 255), (int) (b * 255), (int) (a * 255)),
-                    (width) -> (float) (((float) Math.sin(width * 3.15) / 2f) * (0.3f * 0.3f) * Configuration.TRAIL_WIDTH.get() * (1+Math.random()))
-            );
-            trail.setColor(r, g, b, a);
-            trail.setBillboard(true);
-            trail.setLength((int) (Configuration.TRAIL_LENGTH.get() * (1+Math.random())));
-            trail.setFrequency(Configuration.TRAIL_FREQUENCY.get());
-            trail.pushPoint(new Vec3(this.x, this.y, this.z));
-        }
+        // this.hasTrail = Math.random() < Configuration.TRAIL_CHANCE.get();
+        // if(hasTrail && Configuration.TRAIL_PARTICLES_INVISIBLE.get()){
+        //     this.setSize(0.00001f);
+        // }
+        // if (Configuration.TRAILS.get() && hasTrail) {
+        //     trail = new Trail(
+        //             FastColor.ARGB32.color((int) (r * 255), (int) (g * 255), (int) (b * 255), (int) (a * 255)),
+        //             (width) -> (float) (((float) Math.sin(width * 3.15) / 2f) * (0.3f * 0.3f) * Configuration.TRAIL_WIDTH.get() * (1+Math.random()))
+        //     );
+        //     trail.setColor(r, g, b, a);
+        //     trail.setBillboard(true);
+        //     trail.setLength((int) (Configuration.TRAIL_LENGTH.get() * (1+Math.random())));
+        //     trail.setFrequency(Configuration.TRAIL_FREQUENCY.get());
+        //     trail.pushPoint(new Vec3(this.x, this.y, this.z));
+        // }
     }
 
     Trail trail;
 
-    @Override
-    public boolean shouldCull() {
-        return hasTrail;
-    }
+    // @Override
+    // public boolean shouldCull() {
+    //     return hasTrail;
+    // }
 
     @Override
     public void render(VertexConsumer p_107678_, Camera p_107679_, float p_107680_) {
@@ -100,13 +100,13 @@ public class VFXParticle extends TextureSheetParticle {
         p_107678_.vertex(avector3f[1].x(), avector3f[1].y(), avector3f[1].z()).uv(f7, f4).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
         p_107678_.vertex(avector3f[2].x(), avector3f[2].y(), avector3f[2].z()).uv(f6, f4).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
         p_107678_.vertex(avector3f[3].x(), avector3f[3].y(), avector3f[3].z()).uv(f6, f5).color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(j).endVertex();
-        if (Configuration.TRAILS.get() && hasTrail) {
-            ClientSetup.delayedRenders.add(ps -> {
-                trail.pushPoint(new Vec3(lX, lY, lZ));
-                trail.setColor(this.rCol, this.gCol, this.bCol, this.alpha);
-                trail.render(ps, Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(LootBeams.translucentNoCull(TEXTURE)), j);
-            });
-        }
+        // if (Configuration.TRAILS.get() && hasTrail) {
+        //     ClientSetup.delayedRenders.add(ps -> {
+        //         trail.pushPoint(new Vec3(lX, lY, lZ));
+        //         trail.setColor(this.rCol, this.gCol, this.bCol, this.alpha);
+        //         trail.render(ps, Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(LootBeams.translucentNoCull(TEXTURE)), j);
+        //     });
+        // }
     }
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("lootbeams:textures/entity/white.png");

@@ -55,115 +55,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = LootBeams.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
-	
+	@SubscribeEvent
 	public static void init(FMLClientSetupEvent ignored) {
 	 	ignored.enqueueWork(() -> {
-	 		NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
 	 		NeoForge.EVENT_BUS.addListener(ClientSetup::onItemCreation);
 	 		NeoForge.EVENT_BUS.addListener(ClientSetup::entityRemoval);
+			NeoForge.EVENT_BUS.addListener(ClientSetup::onRenderNameplate);
 	 		NeoForge.EVENT_BUS.addListener(ClientSetup::onLevelRender);
 	 	});
-	}
-
-	@SubscribeEvent
-	public static void onClientTick(ClientTickEvent event) {
-		if(event.phase.equals(TickEvent.Phase.START)) {
-			if(playSoundCooldown > 0) playSoundCooldown--;
-		}
-	}
-	@SubscribeEvent
-	public static void onHudRender(RenderGuiOverlayEvent.Post event) {
-		if(event.getOverlay().equals(VanillaGuiOverlay.CROSSHAIR.type())){
-			if(Configuration.ADVANCED_TOOLTIPS.get() && (Minecraft.getInstance().screen == null || Minecraft.getInstance().screen instanceof ChatScreen)) {
-				Player player = Minecraft.getInstance().player;
-				HitResult result = getEntityItem(player);
-				if(result != null && result.getType() == HitResult.Type.ENTITY) {
-					if(((EntityHitResult)result).getEntity() instanceof ItemEntity itemEntity) {
-						if(Configuration.REQUIRE_ON_GROUND.get() && !itemEntity.onGround()) return;
-						int x = event.getWindow().getGuiScaledWidth() / 2;
-						int rarityX = x;
-						int y = event.getWindow().getGuiScaledHeight() / 2;
-						List<Component> tooltipLines = Screen.getTooltipFromItem(Minecraft.getInstance(), itemEntity.getItem());
-						if(Configuration.WORLDSPACE_TOOLTIPS.get()){
-							Vec3 tooltipWorldPos = itemEntity.position().add(
-									0,
-									Math.min(1D, Minecraft.getInstance().player.distanceToSqr(itemEntity) * 0.025D)
-											+ Configuration.NAMETAG_Y_OFFSET.get() +
-											(Screen.getTooltipFromItem(Minecraft.getInstance(), itemEntity.getItem()).size())/100f,
-									0);
-							Vector3f desiredScreenSpacePos = worldToScreenSpace(tooltipWorldPos, event.getPartialTick());
-							desiredScreenSpacePos = new Vector3f(Mth.clamp(desiredScreenSpacePos.x(), 0, event.getWindow().getGuiScaledWidth()), Mth.clamp(desiredScreenSpacePos.y(), 0, event.getWindow().getGuiScaledHeight() - (Minecraft.getInstance().font.lineHeight * Screen.getTooltipFromItem(Minecraft.getInstance(), itemEntity.getItem()).size())), desiredScreenSpacePos.z());
-							Component longestLine =
-									tooltipLines.stream().max((a, b) -> Minecraft.getInstance().font.width(a) - Minecraft.getInstance().font.width(b))
-											.orElse(Screen.getTooltipFromItem(Minecraft.getInstance(), itemEntity.getItem()).get(0));
-							if(Configuration.SCREEN_TOOLTIPS_REQUIRE_CROUCH.get() && !player.isCrouching()) longestLine = tooltipLines.get(0);
-							x = (int)desiredScreenSpacePos.x() - 10 - Minecraft.getInstance().font.width(longestLine) / 2;
-							rarityX = (int)desiredScreenSpacePos.x() - 12 - Minecraft.getInstance().font.width(LootBeamRenderer.getRarity(itemEntity.getItem())) / 2;
-							y = (int)desiredScreenSpacePos.y();
-						}
-						int guiScale = Minecraft.getInstance().options.guiScale().get();
-						if(tooltipLines.size() > 6) {
-							Minecraft.getInstance().options.guiScale().set(1);
-						}
-						if((Configuration.SCREEN_TOOLTIPS_REQUIRE_CROUCH.get() && player.isCrouching()) || !Configuration.SCREEN_TOOLTIPS_REQUIRE_CROUCH.get()) {
-							event.getGuiGraphics().renderTooltip(Minecraft.getInstance().font, itemEntity.getItem(), x, y);
-						} else {
-							tooltipLines = List.of(tooltipLines.get(0), Component.literal(LootBeamRenderer.getRarity(itemEntity.getItem())).withStyle(itemEntity.getItem().getDisplayName().getStyle()));
-							// if(ModList.get().isLoaded("apotheosis")) {
-							// 	if(ApotheosisCompat.isApotheosisItem(itemEntity.getItem())) {
-							// 		tooltipLines = List.of(tooltipLines.get(0), Component.literal(LootBeamRenderer.getRarity(itemEntity.getItem())).withStyle(s -> s.withColor(ApotheosisCompat.getRarityColor(itemEntity.getItem()))));
-							// 	}
-							// }
-							if(Configuration.COMBINE_NAME_AND_RARITY.get()) {
-								event.getGuiGraphics().renderTooltip(Minecraft.getInstance().font, tooltipLines, itemEntity.getItem().getTooltipImage(), itemEntity.getItem(), x, y);
-							} else {
-								event.getGuiGraphics().renderTooltip(Minecraft.getInstance().font, List.of(tooltipLines.get(0)), itemEntity.getItem().getTooltipImage(), itemEntity.getItem(), x, y);
-								event.getGuiGraphics().renderTooltip(Minecraft.getInstance().font, List.of(tooltipLines.get(1)), itemEntity.getItem().getTooltipImage(), itemEntity.getItem(), rarityX, y + Minecraft.getInstance().font.lineHeight * 2);
-							}
-						}
-						Minecraft.getInstance().options.guiScale().set(guiScale);
-					}
-				}
-			}
-		}
-	}
-
-	public static Vector3f worldToScreenSpace(Vec3 pos, float partialTicks) {
-		Minecraft mc = Minecraft.getInstance();
-		Camera camera = mc.gameRenderer.getMainCamera();
-		Vec3 cameraPosition = camera.getPosition();
-
-		Vector3f position = new Vector3f((float) (cameraPosition.x - pos.x), (float) (cameraPosition.y - pos.y), (float) (cameraPosition.z - pos.z));
-		Quaternionf cameraRotation = camera.rotation();
-		cameraRotation.conjugate();
-		//cameraRotation = restrictAxis(new Vec3(1, 1, 0), cameraRotation);
-		cameraRotation.transform(position);
-
-		// Account for view bobbing
-		if (mc.options.bobView().get() && mc.getCameraEntity() instanceof Player) {
-			Player player = (Player) mc.getCameraEntity();
-			float playerStep = player.walkDist - player.walkDistO;
-			float stepSize = -(player.walkDist + playerStep * partialTicks);
-			float viewBob = Mth.lerp(partialTicks, player.oBob, player.bob);
-
-			Quaternionf bobXRotation = Axis.XP.rotationDegrees(Math.abs(Mth.cos(stepSize * (float) Math.PI - 0.2f) * viewBob) * 5f);
-			Quaternionf bobZRotation = Axis.ZP.rotationDegrees(Mth.sin(stepSize * (float) Math.PI) * viewBob * 3f);
-			bobXRotation.conjugate();
-			bobZRotation.conjugate();
-			bobXRotation.transform(position);
-			bobZRotation.transform(position);
-			position.add(Mth.sin(stepSize * (float) Math.PI) * viewBob * 0.5f, Math.abs(Mth.cos(stepSize * (float) Math.PI) * viewBob), 0f);
-		}
-
-		Window window = mc.getWindow();
-		float fov = mc.options.fov().get().floatValue();
-		float screenSize = window.getGuiScaledHeight() / 2f / position.z() / (float) Math.tan(Math.toRadians(fov / 2f));
-		position.mul(-screenSize, -screenSize, 1f);
-		position.add(window.getGuiScaledWidth() / 2f, window.getGuiScaledHeight() / 2f, 0f);
-
-		return position;
 	}
 
 	public static HitResult getEntityItem(Player player) {
@@ -236,25 +137,6 @@ public class ClientSetup {
 		return light;
 	}
 
-	public static int playSoundCooldown = 0;
-	public static void playDropSound(ItemEntity itemEntity) {
-		if(playSoundCooldown != 0) return;
-		if (!Configuration.SOUND.get()) {
-			return;
-		}
-
-		Item item = itemEntity.getItem().getItem();
-		if ((Configuration.SOUND_ALL_ITEMS.get() && !isItemInRegistryList(Configuration.BLACKLIST.get(), item))
-				|| (Configuration.SOUND_ONLY_EQUIPMENT.get() && isEquipmentItem(item))
-				|| (Configuration.SOUND_ONLY_RARE.get() && LootBeamRenderer.compatRarityCheck(itemEntity, false))
-				|| isItemInRegistryList(Configuration.SOUND_ONLY_WHITELIST.get(), item)) {
-			WeighedSoundEvents sound = Minecraft.getInstance().getSoundManager().getSoundEvent(LootBeams.LOOT_DROP);
-			if(sound != null && Minecraft.getInstance().level != null) {
-				Minecraft.getInstance().level.playSound(Minecraft.getInstance().player, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), SoundEvent.createFixedRangeEvent(LootBeams.LOOT_DROP, 8.0f), SoundSource.AMBIENT, 0.1f * Configuration.SOUND_VOLUME.get().floatValue(), 1.0f);
-				playSoundCooldown = 3;
-			}
-		}
-	}
 	//@SubscribeEvent
 	public static void onRenderNameplate(RenderNameTagEvent event) {
 		if (!(event.getEntity() instanceof ItemEntity itemEntity)

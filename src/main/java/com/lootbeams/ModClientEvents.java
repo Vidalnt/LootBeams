@@ -33,6 +33,6 @@ public class ModClientEvents {
     }
 
     private static void registerShader(RegisterShadersEvent event, String id, VertexFormat format, Consumer<ShaderInstance> callback) throws IOException {
-        event.registerShader(new ShaderInstance(event.getResourceProvider(), new ResourceLocation("lootbeams", id), format), callback);
+        event.registerShader(new ShaderInstance(event.getResourceProvider(), new ResourceLocation(LootBeams.MODID, id), format), callback);
     }
 }

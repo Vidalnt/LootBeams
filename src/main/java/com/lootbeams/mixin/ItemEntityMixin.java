@@ -1,6 +1,6 @@
 package com.lootbeams.mixin;
 
-import com.lootbeams.ClientSetup;
+import com.lootbeams.ClientSetupTwo;
 import net.minecraft.world.entity.item.ItemEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -17,7 +17,7 @@ public class ItemEntityMixin {
     private void onTick(CallbackInfo ci) {
         ItemEntity itemEntity = (ItemEntity) (Object) this;
         if (!lootBeams$hasPlayedSound && (itemEntity.onGround() || (itemEntity.onGround() && (itemEntity.tickCount < 10 && itemEntity.tickCount > 3)))) {
-            ClientSetup.playDropSound(itemEntity);
+            ClientSetupTwo.playDropSound(itemEntity);
             lootBeams$hasPlayedSound = true;
         }
 

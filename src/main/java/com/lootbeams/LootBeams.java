@@ -35,15 +35,15 @@ public class LootBeams {
 		//FMLJavaModLoadingContext.get().getModEventBus().addListener(com.lootbeams.ClientSetup::init);
 	}
 
-	public static RenderType translucentNoCull(ResourceLocation texture) {
-        return RenderType.create("lootbeams_translucent", 
-                                 DefaultVertexFormat.NEW_ENTITY, 
-                                 VertexFormat.Mode.QUADS, 
-                                 256, 
-                                 false, 
-                                 true,
-                                 RenderType.CompositeState.builder()
-                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                    .createCompositeState(false));
-    }
+	// public static RenderType translucentNoCull(ResourceLocation texture) {
+    //     return RenderType.create("lootbeams_translucent", 
+    //                              DefaultVertexFormat.NEW_ENTITY, 
+    //                              VertexFormat.Mode.QUADS, 
+    //                              256, 
+    //                              false, 
+    //                              true,
+    //                              RenderType.CompositeState.builder()
+    //                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+    //                                 .createCompositeState(false));
+    // }
 }

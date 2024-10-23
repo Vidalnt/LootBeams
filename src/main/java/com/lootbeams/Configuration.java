@@ -84,13 +84,13 @@ public class Configuration {
             .comment("If the particles should spin around the beam.")
             .define("spin_around_beam", true);
 
-    public static final ModConfigSpec.BooleanValue TRAILS = BUILDER
-            .comment("If the particles should leave a trail.")
-            .define("trails", true);
+//     public static final ModConfigSpec.BooleanValue TRAILS = BUILDER
+//             .comment("If the particles should leave a trail.")
+//             .define("trails", true);
 
-    public static final ModConfigSpec.BooleanValue TRAIL_PARTICLES_INVISIBLE = BUILDER
-            .comment("If the particles with a trail should be invisible.")
-            .define("trail_particles_invisible", true);
+//     public static final ModConfigSpec.BooleanValue TRAIL_PARTICLES_INVISIBLE = BUILDER
+//             .comment("If the particles with a trail should be invisible.")
+//             .define("trail_particles_invisible", true);
 
     public static final ModConfigSpec.BooleanValue ADVANCED_TOOLTIPS = BUILDER
             .comment("If vanilla tooltips should be rendered on items in world.")
@@ -220,13 +220,13 @@ public class Configuration {
             .comment("The direction of the particles on the Z axis.")
             .defineInRange("particle_direction_z", 0D, -1D, 1D);
 
-    public static final ModConfigSpec.DoubleValue TRAIL_CHANCE = BUILDER
-            .comment("The chance of a particle leaving a trail.")
-            .defineInRange("trail_chance", 0.5D, 0D, 1D);
+//     public static final ModConfigSpec.DoubleValue TRAIL_CHANCE = BUILDER
+//             .comment("The chance of a particle leaving a trail.")
+//             .defineInRange("trail_chance", 0.5D, 0D, 1D);
 
-    public static final ModConfigSpec.DoubleValue TRAIL_WIDTH = BUILDER
-            .comment("The width of the trail.")
-            .defineInRange("trail_width", 0.2D, 0.00001D, 10D);
+//     public static final ModConfigSpec.DoubleValue TRAIL_WIDTH = BUILDER
+//             .comment("The width of the trail.")
+//             .defineInRange("trail_width", 0.2D, 0.00001D, 10D);
 
     public static final ModConfigSpec.DoubleValue BEAM_RADIUS = BUILDER
             .comment("The radius of the beam.")
@@ -248,13 +248,13 @@ public class Configuration {
             .comment("The lifetime of the particles in ticks.")
             .defineInRange("particle_lifetime", 15, 1, 100);
 
-    public static final ModConfigSpec.IntValue TRAIL_LENGTH = BUILDER
-            .comment("The length of the trail.")
-            .defineInRange("trail_length", 30, 1, 200);
+//     public static final ModConfigSpec.IntValue TRAIL_LENGTH = BUILDER
+//             .comment("The length of the trail.")
+//             .defineInRange("trail_length", 30, 1, 200);
 
-    public static final ModConfigSpec.IntValue TRAIL_FREQUENCY = BUILDER
-            .comment("The frequency of the trail. The maximum value this should be is the length. The lower the frequency, the smoother the trail.")
-            .defineInRange("trail_frequency", 1, 1, 200);
+//     public static final ModConfigSpec.IntValue TRAIL_FREQUENCY = BUILDER
+//             .comment("The frequency of the trail. The maximum value this should be is the length. The lower the frequency, the smoother the trail.")
+//             .defineInRange("trail_frequency", 1, 1, 200);
 
     public static final ModConfigSpec.DoubleValue PARTICLE_COUNT = BUILDER
             .comment("The amount of particles to spawn per second.")
@@ -303,8 +303,8 @@ public class Configuration {
     public static boolean particles;
     public static boolean particleRareOnly;
     public static boolean spinAroundBeam;
-    public static boolean trails;
-    public static boolean trailParticlesInvisible;
+    //public static boolean trails;
+    //public static boolean trailParticlesInvisible;
     public static boolean advancedTooltips;
     public static boolean worldspaceTooltips;
     public static boolean borders;
@@ -334,8 +334,8 @@ public class Configuration {
     public static double particleDirectionX;
     public static double particleDirectionY;
     public static double particleDirectionZ;
-    public static double trailChance;
-    public static double trailWidth;
+    //public static double trailChance;
+    //public static double trailWidth;
     public static double nametagLookSensitivity;
     public static double nametagTextAlpha;
     public static double nametagBackgroundAlpha;
@@ -370,8 +370,8 @@ public class Configuration {
         particles = PARTICLES.get();
         particleRareOnly = PARTICLE_RARE_ONLY.get();
         spinAroundBeam = SPIN_AROUND_BEAM.get();
-        trails = TRAILS.get();
-        trailParticlesInvisible = TRAIL_PARTICLES_INVISIBLE.get();
+        //trails = TRAILS.get();
+        //trailParticlesInvisible = TRAIL_PARTICLES_INVISIBLE.get();
         advancedTooltips = ADVANCED_TOOLTIPS.get();
         worldspaceTooltips = WORLDSPACE_TOOLTIPS.get();
         borders = BORDERS.get();
@@ -401,8 +401,8 @@ public class Configuration {
         particleDirectionX = PARTICLE_DIRECTION_X.get();
         particleDirectionY = PARTICLE_DIRECTION_Y.get();
         particleDirectionZ = PARTICLE_DIRECTION_Z.get();
-        trailChance = TRAIL_CHANCE.get();
-        trailWidth = TRAIL_WIDTH.get();
+        //trailChance = TRAIL_CHANCE.get();
+        //trailWidth = TRAIL_WIDTH.get();
         nametagLookSensitivity = NAMETAG_LOOK_SENSITIVITY.get();
         nametagTextAlpha = NAMETAG_TEXT_ALPHA.get();
         nametagBackgroundAlpha = NAMETAG_BACKGROUND_ALPHA.get();
